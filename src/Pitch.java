@@ -80,25 +80,13 @@ public class Pitch {
 							PitchDetectionResult pitchDetectionResult,
 							AudioEvent audioEvent) {
 						final float pitchInHz = pitchDetectionResult.getPitch();
-						count++;
-						String noteP = "";
 						String time = "";
-						int noteAns = -2; 
-						
-						double percent = 0;
+						count++;
 						DecimalFormat df = new DecimalFormat("#.00");
 						time = " "+df.format(((double)(count*BufferSize + 1))/sampFreq);
-						double noteIndex = (Math.log((double)pitchInHz)-2.794372868)/0.0578;
-						if(noteIndex-Math.floor(noteIndex) >= 0.5){
-							noteAns = (int) Math.floor(noteIndex);
-							percent = (noteIndex-Math.floor(noteIndex))*100;
-						}
-						else{
-							noteAns = (int) Math.floor(noteIndex) + 1;
-							percent = 100-(noteIndex-Math.floor(noteIndex))*100;
-						}
-						System.out.println(pitchInHz + " " + noteIndex + " " + noteAns);
-						noteP = note[noteAns];
+						int noteAns = findNote(pitchInHz);
+						System.out.println(pitchInHz + " " + noteAns);
+						String noteP = note[noteAns];
 						if (pitchInHz == -1){
 							//System.out.println(pitchInHz);
 							String ans = time + " detect nothing";
@@ -113,8 +101,7 @@ public class Pitch {
 							}
 						}
 						else{
-							String ans = time + " "+pitchInHz + " " + noteP + " "
-									+ percent + "%";
+							String ans = time + " "+pitchInHz + " " + noteP/* + " " + percent + "%"*/;
 						
 							//System.out.println(ans);
 							if(!pitchBefore.equals(noteP)){
@@ -164,4 +151,18 @@ public class Pitch {
 	}
 	public static void playNote(int note,int duration){
 }
+	public static int findNote(double freq){
+		int noteAns = -2;
+		//double percent = 0;
+		double noteIndex = (Math.log((double)freq)-2.794372868)/0.0578;
+		if(noteIndex-Math.floor(noteIndex) >= 0.5){
+			noteAns = (int) Math.floor(noteIndex) + 1;
+			//percent = (noteIndex-Math.floor(noteIndex))*100;
+		}
+		else{
+			noteAns = (int) Math.floor(noteIndex);
+			//percent = 100-(noteIndex-Math.floor(noteIndex))*100;
+		}
+		return noteAns;
+	}
 }
