@@ -90,11 +90,11 @@ public class Pitch {
 						time = " "+df.format(((double)(count*BufferSize + 1))/sampFreq);
 						double noteIndex = (Math.log((double)pitchInHz)-2.794372868)/0.0578;
 						if(noteIndex-Math.floor(noteIndex) >= 0.5){
-							noteAns = (int) Math.floor(noteIndex);
+							noteAns = (int) Math.floor(noteIndex) + 1;
 							percent = (noteIndex-Math.floor(noteIndex))*100;
 						}
 						else{
-							noteAns = (int) Math.floor(noteIndex) + 1;
+							noteAns = (int) Math.floor(noteIndex);
 							percent = 100-(noteIndex-Math.floor(noteIndex))*100;
 						}
 						System.out.println(pitchInHz + " " + noteIndex + " " + noteAns);
