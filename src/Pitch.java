@@ -83,14 +83,19 @@ public class Pitch {
 							PitchDetectionResult pitchDetectionResult,
 							AudioEvent audioEvent) {
 						final float pitchInHz = pitchDetectionResult.getPitch();
+						final float pitchProp = pitchDetectionResult.getProbability();
 						String time = "";
 						count++;
 						DecimalFormat df = new DecimalFormat("#.00");
 						time = " "+df.format(((double)(count*BufferSize + 1))/sampFreq);
-
-						int noteAns = findNote(pitchInHz);
+						 int noteAns;
+						if(pitchProp >0.98)noteAns = findNote(pitchInHz);
+						else noteAns = lastNote;
+						
 						System.out.println(pitchInHz + " " + noteAns);
-						String noteP = note[noteAns];
+						 String noteP;
+						if(noteAns>0)  noteP = note[noteAns];
+						else noteP = "detect nothing";
 
 						if (pitchInHz == -1){
 							//System.out.println(pitchInHz);
@@ -99,7 +104,7 @@ public class Pitch {
 
 								int duration = (int)(Double.parseDouble(time)*1000) - lastDuration;
 								lastDuration = (int)(Double.parseDouble(time)*1000);
-
+								
 								if(noteAns >0)playNote.add(noteAns+12);
 								else playNote.add(-1);
 								frequencyArray.add(pitchInHz);
@@ -141,18 +146,25 @@ public class Pitch {
 		ArrayList<Integer> reallyPlayduration = new ArrayList<Integer>();
 		int currentSize = 0 ;
 		for(int i = 0 ; i < playNote.size()-1;i++){
+			if(i>0)System.out.println("i = "+i+" "+playNote.get(i)+" vs "+reallyPlayNote.get(currentSize));
+			
 			if(i==0){
 				reallyPlayNote.add(playNote.get(0)); 
 				reallyPlayduration.add(playDuration.get(0));
+				System.out.println("add "+playNote.get(0)+" to index "+currentSize);
 			}
-			else if((Math.abs(playNote.get(i)-playNote.get(i+1))<3)){
-				playNote.set(i+1,playNote.get(i));
+			else if((Math.abs(playNote.get(i)-reallyPlayNote.get(currentSize))<2)){
+				if(i>0)System.out.println("i = "+i+" "+playNote.get(i)+" differ "+playNote.get(i-1));
+			//	playNote.set(i+1,playNote.get(i));
 				reallyPlayduration.set(currentSize,reallyPlayduration.get(currentSize)+playDuration.get(i));
 			}
 			else{
+				
 				reallyPlayNote.add(playNote.get(i));
 				reallyPlayduration.add(playDuration.get(i));
+				
 				currentSize++;
+				System.out.println("add "+playNote.get(i)+" to index "+currentSize);
 			}
 		}
 		
@@ -165,6 +177,11 @@ public class Pitch {
 			e.printStackTrace();
 		}
 		System.out.println("---------------end---------------");
+		for(int i = 0 ; i < reallyPlayNote.size();i++){
+			System.out.println("true note is "+reallyPlayNote.get(i)+" and the true duration is "+reallyPlayduration.get(i));
+		}
+		System.out.println("---------------true end---------------");
+		
 		JOptionPane.showMessageDialog(null, pitchAnswer);
 		
 
@@ -175,7 +192,7 @@ public class Pitch {
 	public static void main(String[] args) throws LineUnavailableException,
 			UnsupportedAudioFileException, IOException, InterruptedException {
 	//	MatlabMethod.wavPlay("D:/testSound/D.wav");
-		String fileDestination = "C:/testCDE.wav";
+		String fileDestination = "C:/test.wav";
 
 			Thread thread = pitchEst(fileDestination);
 			while(thread.isAlive());
