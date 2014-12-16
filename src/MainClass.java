@@ -524,7 +524,10 @@ public class MainClass extends JPanel implements ActionListener {
 		synth.loadInstrument(instr[0]);
 		channel.programChange(channelIndex);
 		for(int i = 0 ; i < note.size(); i++ ){
+			if(duration.get(i)<187)continue;
+
 			int interestNote = note.get(i);
+			System.out.println("play "+interestNote+" for "+duration.get(i));
 			if(interestNote>0)channel.noteOn(interestNote,volume);
 			else channel.allNotesOff();
 			if(duration.get(i)>0)Thread.sleep(duration.get(i));

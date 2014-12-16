@@ -158,9 +158,34 @@ public class Pitch {
 				System.out.println("add "+playNote.get(0)+" to index "+currentSize);
 			}
 			else if((Math.abs(playNote.get(i)-reallyPlayNote.get(currentSize))<2)){
-				if(i>0)System.out.println("i = "+i+" "+playNote.get(i)+" differ "+playNote.get(i-1));
+				int j = i;
+				int currentDuration = reallyPlayduration.get(currentSize);
+				int otherDuration =0;
+				for(;j<playNote.size();j++){
+					if(playNote.get(j)==reallyPlayNote.get(currentSize)){
+						System.out.println("Current duration = "+currentDuration +" Other duration = "+otherDuration);
+						currentDuration+= playDuration.get(j);
+						if(currentDuration > otherDuration)
+							reallyPlayduration.set(currentSize,reallyPlayduration.get(currentSize)+playDuration.get(i));
+						else{
+							if(i>0)System.out.println("i = "+i+" "+playNote.get(i)+" differ "+playNote.get(i-1));
+							reallyPlayNote.add(playNote.get(i));
+							reallyPlayduration.add(playDuration.get(i));
+							currentSize++;
+						}
+						break;
+					}
+					else otherDuration+=playDuration.get(j);
+					if(j==playNote.size()-1){
+						if(i>0)System.out.println("i = "+i+" "+playNote.get(i)+" differ "+playNote.get(i-1));
+						reallyPlayNote.add(playNote.get(i));
+						reallyPlayduration.add(playDuration.get(i));
+						currentSize++;
+					}
+				}
+
 			//	playNote.set(i+1,playNote.get(i));
-				reallyPlayduration.set(currentSize,reallyPlayduration.get(currentSize)+playDuration.get(i));
+			//	reallyPlayduration.set(currentSize,reallyPlayduration.get(currentSize)+playDuration.get(i));
 			}
 			else{
 				
@@ -205,7 +230,10 @@ public class Pitch {
 	
 	}
 	public static void playNote(int note,int duration){
-}
+	}
+	public static void tuneNote(ArrayList<Integer> noteList,ArrayList<Integer> durationList){
+		
+	}
 	public static int findNote(double freq){
 		int noteAns = -2;
 		//double percent = 0;
