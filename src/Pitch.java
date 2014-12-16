@@ -86,27 +86,19 @@ public class Pitch {
 						int noteAns = -2; 
 						
 						double percent = 0;
-						for (int i = 0; i < freq.length; i++) {
-							DecimalFormat df = new DecimalFormat("#.00");
-							time = " "+df.format(((double)(count*BufferSize + 1))/sampFreq);
-							if (pitchInHz == -1)
-								break;
-							if (pitchInHz < freq[i]) {
-								if (freq[i] - pitchInHz > pitchInHz
-										- freq[i - 1]) {
-									noteP = note[i - 1];
-									noteAns = i-1;
-									percent = (freq[i] - pitchInHz)
-											/ (freq[i] - freq[i - 1]) * 100;
-								} else {
-									noteP = note[i];
-									noteAns = i;
-									percent = (pitchInHz - freq[i - 1])
-											/ (freq[i] - freq[i - 1]) * 100;
-								}
-								break;
-							}
+						DecimalFormat df = new DecimalFormat("#.00");
+						time = " "+df.format(((double)(count*BufferSize + 1))/sampFreq);
+						double noteIndex = (Math.log((double)pitchInHz)-2.794372868)/0.0578;
+						if(noteIndex-Math.floor(noteIndex) >= 0.5){
+							noteAns = (int) Math.floor(noteIndex);
+							percent = (noteIndex-Math.floor(noteIndex))*100;
 						}
+						else{
+							noteAns = (int) Math.floor(noteIndex) + 1;
+							percent = 100-(noteIndex-Math.floor(noteIndex))*100;
+						}
+						System.out.println(pitchInHz + " " + noteIndex + " " + noteAns);
+						noteP = note[noteAns];
 						if (pitchInHz == -1){
 							//System.out.println(pitchInHz);
 							String ans = time + " detect nothing";

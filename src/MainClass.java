@@ -514,7 +514,7 @@ public class MainClass extends JPanel implements ActionListener {
 		
 		try {
 			synth = MidiSystem.getSynthesizer();
-			synth.open();   
+			synth.open();
 		} catch (MidiUnavailableException e) {
 			System.out.println("Warning! Midi file is not found.");
 		}     
