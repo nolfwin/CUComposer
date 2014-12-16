@@ -22,8 +22,10 @@ public class Pitch {
 	static String pitchBefore = "";
 	static int lastDuration = 0;
 	static int volume = 80;
+	static int lastNote=-1;
 	static ArrayList<Integer> playNote = new ArrayList<Integer>();
 	static ArrayList<Integer> playDuration = new ArrayList<Integer>();
+	static ArrayList<Float> frequencyArray= new ArrayList<Float>();
 	static String[] note = { "C0", "C#0", "D0", "D#0", "E0", "F0", "F#0", "G0",
 			"G#0", "A0", "A#0", "B0", "C1", "C#1", "D1", "D#1", "E1", "F1",
 			"F#1", "G1", "G#1", "A1", "A#1", "B1", "C2", "C#2", "D2", "D#2",
@@ -57,6 +59,7 @@ public class Pitch {
 		playNote.clear();
 		playDuration.clear();
 		playNote.add(-1);
+		frequencyArray.add((float) -1.0);
 		Thread thread = dispatchPitchEst(dispatcher);
 		return thread;
 	}
@@ -111,10 +114,14 @@ public class Pitch {
 							//System.out.println(pitchInHz);
 							String ans = time + " detect nothing";
 							if(!pitchBefore.equals("detect nothing")){
-								if(noteAns >0)playNote.add(noteAns+12);
-								else playNote.add(-1);
+
 								int duration = (int)(Double.parseDouble(time)*1000) - lastDuration;
 								lastDuration = (int)(Double.parseDouble(time)*1000);
+
+								if(noteAns >0)playNote.add(noteAns+12);
+								else playNote.add(-1);
+								frequencyArray.add(pitchInHz);
+								lastNote =-1;
 								playDuration.add(duration);
 								pitchAnswer = pitchAnswer +"\n"+ans;
 								pitchBefore = "detect nothing";
@@ -128,10 +135,14 @@ public class Pitch {
 							if(!pitchBefore.equals(noteP)){
 							pitchAnswer = pitchAnswer +"\n"+ans;
 							pitchBefore = noteP;
-							if(noteAns >0)playNote.add(noteAns+12);
-							else playNote.add(-1);
+
 							int duration = (int)(Double.parseDouble(time)*1000) - lastDuration;
 							lastDuration = (int)(Double.parseDouble(time)*1000);
+
+							lastNote =noteAns;
+							frequencyArray.add(pitchInHz);
+							if(noteAns >0)playNote.add(noteAns+12);
+							else playNote.add(-1);
 							playDuration.add(duration);
 							}
 						}
@@ -143,10 +154,31 @@ public class Pitch {
 		while(thread.isAlive());
 		playDuration.add(1000);
 		for(int i = 0 ; i < playNote.size();i++){
-			System.out.println("note is "+playNote.get(i)+" and the duration is "+playDuration.get(i));
+			System.out.println("note is "+playNote.get(i)+" and the duration is "+playDuration.get(i)+" and the frequency is "+frequencyArray.get(i));
 		}
+		ArrayList<Integer> reallyPlayNote = new ArrayList<Integer>();
+		ArrayList<Integer> reallyPlayduration = new ArrayList<Integer>();
+		int currentSize = 0 ;
+		for(int i = 0 ; i < playNote.size()-1;i++){
+			if(i==0){
+				reallyPlayNote.add(playNote.get(0)); 
+				reallyPlayduration.add(playDuration.get(0));
+			}
+			else if((Math.abs(playNote.get(i)-playNote.get(i+1))<3)){
+				playNote.set(i+1,playNote.get(i));
+				reallyPlayduration.set(currentSize,reallyPlayduration.get(currentSize)+playDuration.get(i));
+			}
+			else{
+				reallyPlayNote.add(playNote.get(i));
+				reallyPlayduration.add(playDuration.get(i));
+				currentSize++;
+			}
+		}
+		
+		
+		
 		try {
-			MainClass.playMusicArray(playNote,playDuration,volume);
+			MainClass.playMusicArray(reallyPlayNote,reallyPlayduration,volume);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -162,7 +194,7 @@ public class Pitch {
 	public static void main(String[] args) throws LineUnavailableException,
 			UnsupportedAudioFileException, IOException, InterruptedException {
 	//	MatlabMethod.wavPlay("D:/testSound/D.wav");
-		String fileDestination = "C:/testt.wav";
+		String fileDestination = "C:/testCDE.wav";
 
 			Thread thread = pitchEst(fileDestination);
 			while(thread.isAlive());
