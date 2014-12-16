@@ -84,23 +84,11 @@ public class Pitch {
 						count++;
 						DecimalFormat df = new DecimalFormat("#.00");
 						time = " "+df.format(((double)(count*BufferSize + 1))/sampFreq);
-<<<<<<< HEAD
+
 						int noteAns = findNote(pitchInHz);
 						System.out.println(pitchInHz + " " + noteAns);
 						String noteP = note[noteAns];
-=======
-						double noteIndex = (Math.log((double)pitchInHz)-2.794372868)/0.0578;
-						if(noteIndex-Math.floor(noteIndex) >= 0.5){
-							noteAns = (int) Math.floor(noteIndex) + 1;
-							percent = (noteIndex-Math.floor(noteIndex))*100;
-						}
-						else{
-							noteAns = (int) Math.floor(noteIndex);
-							percent = 100-(noteIndex-Math.floor(noteIndex))*100;
-						}
-						System.out.println(pitchInHz + " " + noteIndex + " " + noteAns);
-						noteP = note[noteAns];
->>>>>>> ec85379c59822c2f15b7bd4d18325d0f70220309
+
 						if (pitchInHz == -1){
 							//System.out.println(pitchInHz);
 							String ans = time + " detect nothing";
