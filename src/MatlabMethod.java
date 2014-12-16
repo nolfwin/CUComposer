@@ -26,7 +26,7 @@ public class MatlabMethod {
 
 	public static void main(String[] args) throws UnsupportedAudioFileException, IOException {
 
-		String fileDestination = "D:/testSound/C.wav";
+		String fileDestination = "C:/test.wav";
 				
 		float[] audio = wavRead(fileDestination);
 		

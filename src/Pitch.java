@@ -66,6 +66,10 @@ public class Pitch {
 	
 	public static Thread pitchEst(float[] audioFloats) throws UnsupportedAudioFileException, IOException{
 		AudioDispatcher dispatcher = AudioDispatcherFactory.fromFloatArray(audioFloats, 44100, 1024, 0);
+		playNote.clear();
+		playDuration.clear();
+		playNote.add(-1);
+		frequencyArray.add((float) -1.0);
 		Thread thread = dispatchPitchEst(dispatcher);
 		return thread;
 	}
