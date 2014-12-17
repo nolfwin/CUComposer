@@ -199,19 +199,20 @@ public class Pitch {
 		
 		
 		
+
+		System.out.println("---------------end---------------");
+		for(int i = 0 ; i < reallyPlayNote.size();i++){
+		//	JOptionPane.showMessageDialog(null, "fu");
+			System.out.println("true note is "+reallyPlayNote.get(i)+" and the true duration is "+reallyPlayduration.get(i));
+		}
+		System.out.println("---------------true end---------------");
 		try {
 			MainClass.playMusicArray(reallyPlayNote,reallyPlayduration,volume);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		System.out.println("---------------end---------------");
-		for(int i = 0 ; i < reallyPlayNote.size();i++){
-			System.out.println("true note is "+reallyPlayNote.get(i)+" and the true duration is "+reallyPlayduration.get(i));
-		}
-		System.out.println("---------------true end---------------");
-		
-		JOptionPane.showMessageDialog(null, pitchAnswer);
+		//JOptionPane.showMessageDialog(null, pitchAnswer);
 		
 
 		pitchAnswer= "";
