@@ -17,15 +17,17 @@ import be.tarsos.dsp.pitch.PitchProcessor;
 import be.tarsos.dsp.pitch.PitchProcessor.PitchEstimationAlgorithm;
 
 public class Pitch {
-	static int count=0;
+	static int count = 0;
 	static String pitchAnswer = "";
 	static String pitchBefore = "";
 	static int lastDuration = 0;
 	static int volume = 80;
-	static int lastNote=-1;
+	static int lastNote = -1;
+	static float lastFreq = -1;
+	static String pitchPropString="";
 	static ArrayList<Integer> playNote = new ArrayList<Integer>();
 	static ArrayList<Integer> playDuration = new ArrayList<Integer>();
-	static ArrayList<Float> frequencyArray= new ArrayList<Float>();
+	static ArrayList<Float> frequencyArray = new ArrayList<Float>();
 	static String[] note = { "C0", "C#0", "D0", "D#0", "E0", "F0", "F#0", "G0",
 			"G#0", "A0", "A#0", "B0", "C1", "C#1", "D1", "D#1", "E1", "F1",
 			"F#1", "G1", "G#1", "A1", "A#1", "B1", "C2", "C#2", "D2", "D#2",
@@ -52,8 +54,23 @@ public class Pitch {
 			5274.04, 5587.65, 5919.91, 6271.93, 6644.88, 7040, 7458.62, 7902.13 };
 	static int bufferSize = 1024;
 
+	static int[][] key = new int[12][7];
 	
-	public static Thread pitchEst(String directory) throws UnsupportedAudioFileException, IOException{
+	public static void initKey(){
+		key[0][0]=0;key[0][1]=2;key[0][2]=4;key[0][3]=5;key[0][4]=7;key[0][5]=9 ; key[0][6]=11;
+		for(int i = 1 ; i < key.length;i++){
+			for(int j = 0 ; j < key[0].length;j++){
+				key[i][j] = (key[i-1][j]+1)%12;
+			}
+		}
+		for(int i = 1 ; i<key.length;i++){
+		    Arrays.sort(key[i]);
+		}
+	}
+	
+	public static Thread pitchEst(String directory)
+			throws UnsupportedAudioFileException, IOException {
+		initKey();
 		AudioDispatcher dispatcher = AudioDispatcherFactory.fromFile(new File(
 				directory), bufferSize, 0);
 		playNote.clear();
@@ -63,9 +80,12 @@ public class Pitch {
 		Thread thread = dispatchPitchEst(dispatcher);
 		return thread;
 	}
-	
-	public static Thread pitchEst(float[] audioFloats) throws UnsupportedAudioFileException, IOException{
-		AudioDispatcher dispatcher = AudioDispatcherFactory.fromFloatArray(audioFloats, 44100, 1024, 0);
+
+	public static Thread pitchEst(float[] audioFloats)
+			throws UnsupportedAudioFileException, IOException {
+		initKey();
+		AudioDispatcher dispatcher = AudioDispatcherFactory.fromFloatArray(
+				audioFloats, 11025, 1024, 0);
 		playNote.clear();
 		playDuration.clear();
 		playNote.add(-1);
@@ -73,13 +93,11 @@ public class Pitch {
 		Thread thread = dispatchPitchEst(dispatcher);
 		return thread;
 	}
-	public static Thread dispatchPitchEst(AudioDispatcher dispatcher){
+
+	public static Thread dispatchPitchEst(AudioDispatcher dispatcher) {
 		final int BufferSize = bufferSize;
-		final int sampFreq = 44100;
+		final int sampFreq = 11025;
 
-
-
-		
 		dispatcher.addAudioProcessor(new PitchProcessor(
 				PitchEstimationAlgorithm.FFT_YIN, sampFreq, BufferSize,
 				new PitchDetectionHandler() {
@@ -87,165 +105,365 @@ public class Pitch {
 							PitchDetectionResult pitchDetectionResult,
 							AudioEvent audioEvent) {
 						final float pitchInHz = pitchDetectionResult.getPitch();
-						final float pitchProp = pitchDetectionResult.getProbability();
+						final float pitchProp = pitchDetectionResult
+								.getProbability();
 						String time = "";
 						count++;
 						DecimalFormat df = new DecimalFormat("#.00");
-						time = " "+df.format(((double)(count*BufferSize + 1))/sampFreq);
-						 int noteAns;
-						if(pitchProp >0.98)noteAns = findNote(pitchInHz);
-						else noteAns = lastNote;
-						
-						System.out.println(pitchInHz + " " + noteAns);
-						 String noteP;
-						if(noteAns>0)  noteP = note[noteAns];
-						else noteP = "detect nothing";
-
-						if (pitchInHz == -1){
-							//System.out.println(pitchInHz);
-							String ans = time + " detect nothing";
-							if(!pitchBefore.equals("detect nothing")){
-
-								int duration = (int)(Double.parseDouble(time)*1000) - lastDuration;
-								lastDuration = (int)(Double.parseDouble(time)*1000);
-								
-								if(noteAns >0)playNote.add(noteAns+12);
-								else playNote.add(-1);
-								frequencyArray.add(pitchInHz);
-								lastNote =-1;
-								playDuration.add(duration);
-								pitchAnswer = pitchAnswer +"\n"+ans;
-								pitchBefore = "detect nothing";
-							}
+						time = " "
+								+ df.format(((double) (count * BufferSize + 1))
+										/ sampFreq);
+						int noteAns;
+						pitchPropString = pitchPropString +pitchProp+"\n";
+						if (pitchProp > 0.95){
+							noteAns = findNote(pitchInHz);
+							
 						}
 						else{
-							String ans = time + " "+pitchInHz + " " + noteP/* + " " + percent + "%"*/;
+							noteAns = lastNote;
+						}
 						
-							//System.out.println(ans);
-							if(!pitchBefore.equals(noteP)){
-							pitchAnswer = pitchAnswer +"\n"+ans;
-							pitchBefore = noteP;
+						System.out.println(pitchInHz + " " + noteAns);
+						String noteP;
+						if (noteAns > 0)
+							noteP = note[noteAns];
+						else
+							noteP = "detect nothing";
 
-							int duration = (int)(Double.parseDouble(time)*1000) - lastDuration;
-							lastDuration = (int)(Double.parseDouble(time)*1000);
+						if (pitchInHz == -1) {
+							// System.out.println(pitchInHz);
+							String ans = time + " detect nothing";
+							if (!pitchBefore.equals("detect nothing")) {
 
-							lastNote =noteAns;
-							frequencyArray.add(pitchInHz);
-							if(noteAns >0)playNote.add(noteAns+12);
-							else playNote.add(-1);
-							playDuration.add(duration);
+								int duration = (int) (Double.parseDouble(time) * 1000)
+										- lastDuration;
+								lastDuration = (int) (Double.parseDouble(time) * 1000);
+
+								if (noteAns > 0)
+									playNote.add(noteAns + 12);
+								else
+									playNote.add(-1);
+								frequencyArray.add(pitchInHz);
+								lastNote = -1;
+								lastFreq=pitchInHz;
+								playDuration.add(duration);
+								pitchAnswer = pitchAnswer + "\n" + ans;
+								pitchBefore = "detect nothing";
+							}
+						} else {
+							String ans = time + " " + pitchInHz + " " + noteP/*
+																			 * +
+																			 * " "
+																			 * +
+																			 * percent
+																			 * +
+																			 * "%"
+																			 */;
+
+							 System.out.println(ans);
+							if (!pitchBefore.equals(noteP)) {
+								pitchAnswer = pitchAnswer + "\n" + ans;
+								pitchBefore = noteP;
+
+								int duration = (int) (Double.parseDouble(time) * 1000)
+										- lastDuration;
+								lastDuration = (int) (Double.parseDouble(time) * 1000);
+
+								lastNote = noteAns;
+								lastFreq=pitchInHz;
+								frequencyArray.add(pitchInHz);
+								if (noteAns > 0)
+									playNote.add(noteAns + 12);
+								else
+									playNote.add(-1);
+								playDuration.add(duration);
 							}
 						}
 					}
 				}));
-		
+
 		Thread thread = new Thread(dispatcher, "Audio Dispatcher");
 		thread.start();
-		while(thread.isAlive());
+		while (thread.isAlive())
+			;
+		System.out.println("Pitch prop = "+pitchPropString);
 		playDuration.add(1000);
-		for(int i = 0 ; i < playNote.size();i++){
-			System.out.println("note is "+playNote.get(i)+" and the duration is "+playDuration.get(i)+" and the frequency is "+frequencyArray.get(i));
-		}
+
 		ArrayList<Integer> reallyPlayNote = new ArrayList<Integer>();
 		ArrayList<Integer> reallyPlayduration = new ArrayList<Integer>();
-		int currentSize = 0 ;
-		for(int i = 0 ; i < playNote.size()-1;i++){
-			if(i>0)System.out.println("i = "+i+" "+playNote.get(i)+" vs "+reallyPlayNote.get(currentSize));
-			
-			if(i==0){
-				reallyPlayNote.add(playNote.get(0)); 
+		int currentSize = 0;
+		if(playDuration.get(0)<0)playDuration.set(0,0);
+		
+		for (int i = 0; i < playNote.size(); i++) {
+			System.out.println("note is " + playNote.get(i)
+					+ " and the duration is " + playDuration.get(i)
+					+ " and the frequency is " + frequencyArray.get(i));
+		}
+		
+		
+		for (int i = 0; i < playNote.size() - 1; i++) {
+			if (i > 0)
+				System.out.println("i = " + i + " " + playNote.get(i) + " vs "
+						+ reallyPlayNote.get(currentSize));
+
+			if (i == 0) {
+				reallyPlayNote.add(playNote.get(0));
 				reallyPlayduration.add(playDuration.get(0));
-				System.out.println("add "+playNote.get(0)+" to index "+currentSize);
-			}
-			else if((Math.abs(playNote.get(i)-reallyPlayNote.get(currentSize))<2)){
+				System.out.println("add " + playNote.get(0) + " to index "
+						+ currentSize);
+			} else if ((Math.abs(playNote.get(i)
+					- reallyPlayNote.get(currentSize)) < 2)) {
 				int j = i;
 				int currentDuration = reallyPlayduration.get(currentSize);
-				int otherDuration =0;
-				for(;j<playNote.size();j++){
-					if(playNote.get(j)==reallyPlayNote.get(currentSize)){
-						System.out.println("Current duration = "+currentDuration +" Other duration = "+otherDuration);
-						currentDuration+= playDuration.get(j);
-						if(currentDuration > otherDuration)
-							reallyPlayduration.set(currentSize,reallyPlayduration.get(currentSize)+playDuration.get(i));
-						else{
-							if(i>0)System.out.println("i = "+i+" "+playNote.get(i)+" differ "+playNote.get(i-1));
+				int otherDuration = 0;
+				for (; j < playNote.size(); j++) {
+					if (playNote.get(j) == reallyPlayNote.get(currentSize)) {
+						System.out.println("Current duration = "
+								+ currentDuration + " Other duration = "
+								+ otherDuration);
+						currentDuration += playDuration.get(j);
+						if (currentDuration > otherDuration)
+							reallyPlayduration.set(currentSize,
+									reallyPlayduration.get(currentSize)
+											+ playDuration.get(i));
+						else {
+							if (i > 0)
+								System.out.println("i = " + i + " "
+										+ playNote.get(i) + " differ "
+										+ playNote.get(i - 1));
 							reallyPlayNote.add(playNote.get(i));
 							reallyPlayduration.add(playDuration.get(i));
 							currentSize++;
 						}
 						break;
-					}
-					else otherDuration+=playDuration.get(j);
-					if(j==playNote.size()-1){
-						if(i>0)System.out.println("i = "+i+" "+playNote.get(i)+" differ "+playNote.get(i-1));
+					} else
+						otherDuration += playDuration.get(j);
+					if (j == playNote.size() - 1) {
+						if (i > 0)
+							System.out.println("i = " + i + " "
+									+ playNote.get(i) + " differ "
+									+ playNote.get(i - 1));
 						reallyPlayNote.add(playNote.get(i));
 						reallyPlayduration.add(playDuration.get(i));
 						currentSize++;
 					}
 				}
 
-			//	playNote.set(i+1,playNote.get(i));
-			//	reallyPlayduration.set(currentSize,reallyPlayduration.get(currentSize)+playDuration.get(i));
-			}
-			else{
-				
+				// playNote.set(i+1,playNote.get(i));
+				// reallyPlayduration.set(currentSize,reallyPlayduration.get(currentSize)+playDuration.get(i));
+			} else {
+
 				reallyPlayNote.add(playNote.get(i));
 				reallyPlayduration.add(playDuration.get(i));
-				
+
 				currentSize++;
-				System.out.println("add "+playNote.get(i)+" to index "+currentSize);
+				System.out.println("add " + playNote.get(i) + " to index "
+						+ currentSize);
 			}
 		}
-		
-		
-		
-
 		System.out.println("---------------end---------------");
-		for(int i = 0 ; i < reallyPlayNote.size();i++){
-		//	JOptionPane.showMessageDialog(null, "fu");
-			System.out.println("true note is "+reallyPlayNote.get(i)+" and the true duration is "+reallyPlayduration.get(i));
+		for (int i = 0; i < reallyPlayNote.size(); i++) {
+			// JOptionPane.showMessageDialog(null, "fu");
+			System.out.println("true note is " + reallyPlayNote.get(i)
+					+ " and the true duration is " + reallyPlayduration.get(i));
 		}
 		System.out.println("---------------true end---------------");
+
+		for (int i = 0; i < reallyPlayNote.size(); i++) {
+			int dur = reallyPlayduration.get(i);
+			if (dur < 187) {
+				//first entry
+				if (i == 0 && reallyPlayNote.size() > 1) {
+					if (reallyPlayduration.get(i + 1) > dur) {
+						reallyPlayduration.set(i + 1,
+								reallyPlayduration.get(i + 1) + dur);
+						reallyPlayduration.set(i, 0);
+					} else {
+						int j = i + 2;
+						while (j < reallyPlayNote.size()) {
+							if (reallyPlayduration.get(j) > dur) {
+								reallyPlayduration.set(j,
+										reallyPlayduration.get(j) + dur);
+								reallyPlayduration.set(i, 0);
+								break;
+							}
+							j++;
+						}
+					}
+				} 
+				//last entry
+				else if (i == reallyPlayNote.size() - 1) {
+					if (reallyPlayduration.get(i - 1) > dur) {
+						reallyPlayduration.set(i - 1,
+								reallyPlayduration.get(i - 1) + dur);
+						reallyPlayduration.set(i, 0);
+					} else {
+						int j = i - 2;
+						while (j >= 0) {
+							if (reallyPlayduration.get(j) > dur) {
+								reallyPlayduration.set(j,
+										reallyPlayduration.get(j) + dur);
+								reallyPlayduration.set(i, 0);
+								break;
+							}
+							j--;
+						}
+					}
+				} 
+				//in the middle of array
+				else {
+					int c1 = reallyPlayNote.get(i-1);
+					int c2 = reallyPlayNote.get(i+1);
+					int note = reallyPlayNote.get(i);
+					if(Math.abs(note-c1)<Math.abs(note-c2)){
+						if(dur<reallyPlayduration.get(i+1) && dur>reallyPlayduration.get(i-1) ){
+							reallyPlayduration.set(i+1,dur+reallyPlayduration.get(i+1));
+							reallyPlayduration.set(i,0);
+						}
+						else{
+							reallyPlayduration.set(i-1,dur+reallyPlayduration.get(i-1));
+							reallyPlayduration.set(i,0);
+						}
+					}
+					else{
+						if(dur<reallyPlayduration.get(i-1) && dur>reallyPlayduration.get(i+1) ){
+							reallyPlayduration.set(i-1,dur+reallyPlayduration.get(i-1));
+							reallyPlayduration.set(i,0);
+						}
+						else{
+							reallyPlayduration.set(i+1,dur+reallyPlayduration.get(i+1));
+							reallyPlayduration.set(i,0);
+						}
+					}
+
+				}
+			}
+		}
+		for(int i = reallyPlayNote.size()-1;i>=0;i--){
+			if(reallyPlayduration.get(i)==0){
+				reallyPlayNote.remove(i);
+				reallyPlayduration.remove(i);
+			}
+		}
+		for (int i = 0; i < reallyPlayNote.size(); i++) {
+			// JOptionPane.showMessageDialog(null, "fu");
+			System.out.println("really true  note is " + reallyPlayNote.get(i)
+					+ " and the really true true duration is " + reallyPlayduration.get(i));
+		}
+		System.out.println("---------------really true end---------------");
+		int musicKey =calculateKey(reallyPlayNote,reallyPlayduration);
+		tuneMelody(reallyPlayNote,reallyPlayduration,musicKey);
+	
+
+
 		try {
-			MainClass.playMusicArray(reallyPlayNote,reallyPlayduration,volume);
+			MainClass
+					.playMusicArray(reallyPlayNote, reallyPlayduration, volume);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		//JOptionPane.showMessageDialog(null, pitchAnswer);
-		
+		// JOptionPane.showMessageDialog(null, pitchAnswer);
 
-		pitchAnswer= "";
+		pitchAnswer = "";
 		return thread;
 	}
-	
+	public static void tuneMelody(ArrayList<Integer> noteList, ArrayList<Integer> durationList,int musicKey){
+	    System.out.println(Arrays.deepToString(key));
+	    System.out.println("Music Key is "+musicKey);
+	 //   musicKey = 0;
+		for(int i = 0;  i< noteList.size();i++){
+			int multiplier = noteList.get(i)/12;
+			int note = noteList.get(i)%12;
+			int nearestLeft =-1;
+			int nearestRight = 12;
+
+			if (note==0){
+					nearestLeft = (key[musicKey][6]==10) ? -2:-1;
+			}
+			else if(note==11){
+				nearestRight = (key[musicKey][0]==1) ? 13:12;
+			}
+			
+			for(int j = 0 ; j < key[0].length;j++){
+				if(key[musicKey][j]<note){
+					if(nearestLeft<key[musicKey][j])nearestLeft=key[musicKey][j];
+				}
+				else if(key[musicKey][j]>note){
+					if(nearestRight>key[musicKey][j])nearestRight=key[musicKey][j];
+				}
+				else{
+					nearestLeft=-100;
+					break;
+				}
+			}
+			if(nearestLeft!= -100){
+				if(Math.abs(note-nearestLeft)>Math.abs(note-nearestRight)){
+					noteList.set(i,12*multiplier+nearestRight);
+				}
+				else if(Math.abs(note-nearestLeft)<Math.abs(note-nearestRight)){
+					noteList.set(i,12*multiplier+nearestLeft);
+				}
+				else{
+					double a = Math.random();
+					if(a>0.5) noteList.set(i,12*multiplier+nearestRight);
+					else noteList.set(i,12*multiplier+nearestLeft);
+				}
+				
+			}
+		}
+	}
+	public static int calculateKey(ArrayList<Integer> noteList,ArrayList<Integer> durationList){
+		int[] bucket = {0,0,0,0,0,0,0,0,0,0,0,0};
+		for(int i = 0; i < noteList.size();i++){
+			int note = noteList.get(i)%12;
+			for(int j = 0 ; j < key.length ; j++){
+				for(int k = 0 ; k < key[0].length; k++){
+					if(note==key[j][k]) 
+					{bucket[j]+=durationList.get(i);
+					break;
+					}
+				}
+			}
+		}
+		int maxIndex=0;
+		for(int i =1;i<bucket.length;i++){
+			if(bucket[maxIndex]<bucket[i])maxIndex=i;
+		}
+	    System.out.println(Arrays.toString(bucket));
+		return maxIndex;
+	}
 	public static void main(String[] args) throws LineUnavailableException,
 			UnsupportedAudioFileException, IOException, InterruptedException {
-	//	MatlabMethod.wavPlay("D:/testSound/D.wav");
+		// MatlabMethod.wavPlay("D:/testSound/D.wav");
 		String fileDestination = "C:/test.wav";
 
-			Thread thread = pitchEst(fileDestination);
-			while(thread.isAlive());
-			System.out.println("Count = "+count);
-		//	pitchEst(MatlabMethod.wavRead(fileDestination));
-	
+		Thread thread = pitchEst(fileDestination);
+		while (thread.isAlive())
+			;
+		System.out.println("Count = " + count);
+		// pitchEst(MatlabMethod.wavRead(fileDestination));
+
 	}
-	public static void playNote(int note,int duration){
+
+	public static void playNote(int note, int duration) {
 	}
-	public static void tuneNote(ArrayList<Integer> noteList,ArrayList<Integer> durationList){
-		
+
+	public static void tuneNote(ArrayList<Integer> noteList,
+			ArrayList<Integer> durationList) {
+
 	}
-	public static int findNote(double freq){
+
+	public static int findNote(double freq) {
 		int noteAns = -2;
-		//double percent = 0;
-		double noteIndex = (Math.log((double)freq)-2.794372868)/0.0578;
-		if(noteIndex-Math.floor(noteIndex) >= 0.5){
+		// double percent = 0;
+		double noteIndex = (Math.log((double) freq) - 2.794372868) / 0.0578;
+		if (noteIndex - Math.floor(noteIndex) >= 0.5) {
 			noteAns = (int) Math.floor(noteIndex) + 1;
-			//percent = (noteIndex-Math.floor(noteIndex))*100;
-		}
-		else{
+			// percent = (noteIndex-Math.floor(noteIndex))*100;
+		} else {
 			noteAns = (int) Math.floor(noteIndex);
-			//percent = 100-(noteIndex-Math.floor(noteIndex))*100;
+			// percent = 100-(noteIndex-Math.floor(noteIndex))*100;
 		}
 		return noteAns;
 	}

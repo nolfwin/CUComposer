@@ -122,6 +122,7 @@ public class MainClass extends JPanel implements ActionListener {
 
 		JPanel buttonsPanel = new JPanel();
 		buttonsPanel.setBorder(new EmptyBorder(10, 0, 5, 0));
+		//add new button here
 		playB = addButton("Play", buttonsPanel, false);
 		captB = addButton("Record", buttonsPanel, true);
 		saveB = addButton("Save", buttonsPanel, true);
@@ -235,7 +236,7 @@ public class MainClass extends JPanel implements ActionListener {
 			// get an AudioInputStream of the desired format for playback
 
 			AudioFormat.Encoding encoding = AudioFormat.Encoding.PCM_SIGNED;
-			float rate = 44100.0f;
+			float rate = 11025.0f;
 			int channels = 1;
 			int frameSize = 4;
 			int sampleSize = 16;
@@ -389,7 +390,7 @@ public class MainClass extends JPanel implements ActionListener {
 			// and make sure a compatible line is supported.
 
 			AudioFormat.Encoding encoding = AudioFormat.Encoding.PCM_SIGNED;
-			float rate = 44100.0f;
+			float rate = 11025.0f;
 			int channels = 1;
 			int frameSize = 4;
 			int sampleSize = 16;
@@ -476,8 +477,10 @@ public class MainClass extends JPanel implements ActionListener {
 
 	
 	//Analyse the latest observed wav file here
-	public static void analysis(float[] audioFloats) {
+	public static void analysis(float[] audioFloats) throws UnsupportedAudioFileException, IOException {
 		System.out.println("\nAnalysing..");
+		Pitch.count = 0;
+		Pitch.pitchEst(audioFloats);
 	}
 	public static void analysis(String filedestination) throws UnsupportedAudioFileException, IOException {
 		System.out.println("\nAnalysing..");
@@ -487,6 +490,7 @@ public class MainClass extends JPanel implements ActionListener {
 
 	public static void main(String s[]) throws InterruptedException {
 	
+		//create UI
 		MainClass ssc = new MainClass();
 		ssc.open();
 		JFrame f = new JFrame("Capture/Playback");
@@ -501,10 +505,6 @@ public class MainClass extends JPanel implements ActionListener {
 		f.setSize(w, h);
 		f.setVisible(true);
 		System.out.println("System is Running");
-		int[] note = {60,62,64,67,67};
-		int[] duration = {200,200,200,200,200};
-		int volume = 80;
-	//	playMusicArray(note, duration, volume);
 	}
 	public static void playMusicArray(ArrayList<Integer> note,ArrayList<Integer> duration,int volume) throws InterruptedException{
 
@@ -525,7 +525,7 @@ public class MainClass extends JPanel implements ActionListener {
 		synth.loadInstrument(instr[0]);
 		channel.programChange(channelIndex);
 		for(int i = 0 ; i < note.size(); i++ ){
-			if(duration.get(i)<187)continue;
+		//	if(duration.get(i)<187)continue;
 
 			int interestNote = note.get(i);
 			System.out.println("play "+interestNote+" for "+duration.get(i));
