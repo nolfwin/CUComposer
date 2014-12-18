@@ -56,6 +56,7 @@ import java.nio.ByteOrder;
 import java.nio.ShortBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import javax.sound.midi.Instrument;
 import javax.sound.midi.MidiChannel;
@@ -327,10 +328,6 @@ public class MainClass extends JPanel implements ActionListener {
 				byte[] audioBytes = out.toByteArray();
 				float[] audioFloats = MatlabMethod.convertToFloats(audioBytes);		
 				
-				
-				
-				
-				
 				// analysis audioFloat here
 				try {
 					MainClass.analysis(fileDestination);
@@ -340,6 +337,25 @@ public class MainClass extends JPanel implements ActionListener {
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
+				}
+				
+				List<Integer> a = MatlabMethod.segment(audioFloats);
+				for(int i=0;i<a.size();i+=2){
+					int size = a.get(i+1) - a.get(i);
+					float[] part = new float[size];
+					for(int j=0;j<size;j++){
+						part[j] = audioFloats[a.get(i) + j];
+					}
+					System.out.println(i);
+					System.out.println(a.get(i) + " " + a.get(i+1));
+					SoundManager.floatPlay(part);
+					Toolkit.getDefaultToolkit().beep();
+					try {
+						Thread.sleep(1000);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 				}
 			}
 

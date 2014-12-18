@@ -4,6 +4,8 @@ import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.ShortBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.sound.sampled.AudioFileFormat;
 import javax.sound.sampled.AudioFormat;
@@ -158,5 +160,45 @@ public class MatlabMethod {
 	byte[] bytesArray = new byte[shortsArray.length * 2];
 		ByteBuffer.wrap(bytesArray).order(ByteOrder.BIG_ENDIAN).asShortBuffer().put(shortsArray);
 		return bytesArray;
+	}
+	
+	public static List<Integer> segment(float[] amp){
+		List<Integer> start = new ArrayList<Integer>();
+		int startIndex = 0;
+		int k = 0;
+		int size = 330; int inc = 110;
+		boolean voiced = false;
+		while(startIndex<amp.length){
+			float e = 0;
+			float zcr = 0;
+			int i;
+			for(i=startIndex;i<startIndex+size && i<amp.length;i++){
+				//e
+				e += amp[i]*amp[i];
+				//zcr
+				if(i>0 && ((amp[i]<0 && amp[i-1]>0) || (amp[i]>0 && amp[i-1]<0))){
+					zcr++;
+				}
+			}
+			if(i==amp.length){
+				e /= 220 + amp.length % inc;
+				zcr /= 220 + amp.length % inc;
+			}
+			else{
+				e /= size;
+				zcr /= size;
+			}
+			System.out.println("start: " + startIndex + "e: " + e + " zcr: " + zcr + " e*zcr: " + e*zcr + " e/zcr: " + e/zcr);
+			if(voiced && (e*zcr < 0.0015 || (e*zcr < 0.01 && e/zcr < 1))){
+				start.add(startIndex);
+				voiced = false;
+			}
+			else if(!voiced && !(e*zcr < 0.0015 || (e*zcr < 0.01 && e/zcr < 1))){
+				start.add(startIndex);
+				voiced = true;
+			}
+			startIndex += inc;
+		}
+		return start;
 	}
 }
