@@ -325,7 +325,12 @@ public class MainClass extends JPanel implements ActionListener {
 					e1.printStackTrace();
 				}
 				byte[] audioBytes = out.toByteArray();
-				float[] audioFloats = MatlabMethod.convertToFloats(audioBytes);			
+				float[] audioFloats = MatlabMethod.convertToFloats(audioBytes);		
+				
+				
+				
+				
+				
 				// analysis audioFloat here
 				try {
 					MainClass.analysis(fileDestination);

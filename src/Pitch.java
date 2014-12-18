@@ -271,7 +271,7 @@ public class Pitch {
 
 		for (int i = 0; i < reallyPlayNote.size(); i++) {
 			int dur = reallyPlayduration.get(i);
-			if (dur < 187) {
+			if (dur < 100) {
 				//first entry
 				if (i == 0 && reallyPlayNote.size() > 1) {
 					if (reallyPlayduration.get(i + 1) > dur) {
